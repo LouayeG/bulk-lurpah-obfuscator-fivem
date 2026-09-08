@@ -8,18 +8,36 @@ results. Built for FiveM scripts.
 
 | Option | Value |
 | --- | --- |
-| Mode | `main` |
 | Intense VM Structure | off |
-| GC Fixes | off |
-| Target | `FiveM` |
-| Optimization | `Level 2` |
+| Enable GC Fixes | off |
+| Target Version | `FiveM` |
+| Optimization Level | `Level 2` |
 | Static Environment | on |
 | VM Compression | off |
 | Disable Line Information | off |
-| Debug Library | off |
+| Use Debug Library | off |
 
-Change it in [`src/settings.js`](src/settings.js). Option names are matched to
-the node's real option IDs at runtime, so you edit human names, not IDs.
+Obfuscation runs on the **main** node (auto-selected as recommended). Names match
+Luraph's dashboard labels — run `npm run options` to print exactly what your
+account exposes, then edit [`src/settings.js`](src/settings.js). Names are
+resolved to the node's real option IDs at runtime, and anything unrecognized is
+reported in `_report.json` rather than silently applied.
+
+## Resources (.zip)
+
+Drop a whole FiveM resource as a `.zip` and the tool obfuscates it **in place**:
+
+- every eligible `.lua` file inside is obfuscated,
+- `fxmanifest.lua` / `__resource.lua` and all non-Lua assets pass through
+  untouched,
+- the folder structure is preserved and the resource is rebuilt as
+  `<name>-obfuscated.zip`,
+- if one file fails to obfuscate, its original is kept so the resource still
+  runs, and the failure is listed in `_report.json`.
+
+You can mix loose `.lua` files and `.zip` resources in the same upload. To keep
+specific files editable (e.g. a `config.lua`), add their base names to
+`SKIP_BASENAMES` in [`src/resource.js`](src/resource.js).
 
 ## Setup
 
