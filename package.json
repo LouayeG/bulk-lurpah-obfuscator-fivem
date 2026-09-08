@@ -1,0 +1,20 @@
+{
+  "name": "luraph-obfuscator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Batch-obfuscate Lua files through the Luraph API with a fixed FiveM profile",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "options": "node scripts/list-options.js",
+    "check": "node --check server.js && node --check src/luraph.js && node --check src/settings.js && node --check scripts/list-options.js && node --check public/script.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "luraph": "^2.0.9",
+    "multer": "^2.0.1"
+  }
+}
