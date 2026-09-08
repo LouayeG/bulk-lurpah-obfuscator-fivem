@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luraph Batch Obfuscator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="head">
+        <h1>🔒 Luraph Batch Obfuscator</h1>
+        <p>Drop your Lua files, obfuscate them all with one profile, download a zip.</p>
+      </header>
+
+      <section class="card">
+        <div id="drop" class="drop" tabindex="0">
+          <input id="file" type="file" multiple accept=".lua,.luau,.txt" hidden />
+          <div class="drop-inner">
+            <span class="drop-icon">📄</span>
+            <p><strong>Drag &amp; drop</strong> Lua files here</p>
+            <p class="muted">or click to browse — multiple files supported</p>
+          </div>
+        </div>
+
+        <ul id="list" class="list"></ul>
+
+        <div class="actions">
+          <button id="go" class="btn btn-primary" disabled>Obfuscate &amp; download</button>
+          <button id="clear" class="btn btn-quiet" disabled>Clear</button>
+        </div>
+
+        <div id="status" class="status" hidden></div>
+      </section>
+
+      <aside class="card profile">
+        <h2>Active profile</h2>
+        <p class="muted">Applied to every file. Edit <code>src/settings.js</code> to change.</p>
+        <ul id="profile" class="kv"></ul>
+        <p id="keywarn" class="warn" hidden>⚠️ No API key set — add <code>LPH_API_KEY</code> to <code>.env</code>.</p>
+      </aside>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
