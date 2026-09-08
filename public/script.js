@@ -8,6 +8,7 @@ const profileEl = document.getElementById('profile');
 const keyWarn = document.getElementById('keywarn');
 
 let files = [];
+let maxFiles = 100;
 
 function humanSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -38,6 +39,10 @@ function addFiles(fileList) {
   const seen = new Set(files.map((f) => f.name + f.size));
   for (const f of incoming) {
     if (!seen.has(f.name + f.size)) files.push(f);
+  }
+  if (files.length > maxFiles) {
+    files = files.slice(0, maxFiles);
+    setStatus('info', `Capped at ${maxFiles} files per batch — extra files were dropped.`);
   }
   render();
 }
@@ -117,7 +122,8 @@ goBtn.addEventListener('click', async () => {
 // Load and show the active profile
 fetch('/api/settings')
   .then((r) => r.json())
-  .then(({ profile, hasApiKey }) => {
+  .then(({ profile, hasApiKey, maxFiles: limit }) => {
+    if (limit) maxFiles = limit;
     profileEl.innerHTML = '';
     for (const [name, value] of Object.entries(profile)) {
       const li = document.createElement('li');
