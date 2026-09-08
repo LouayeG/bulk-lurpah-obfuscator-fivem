@@ -1,19 +1,22 @@
 // The obfuscation profile to apply to every uploaded file.
 //
 // Keys are the human-readable option NAMES exactly as they appear in the Luraph
-// dashboard. They are resolved to each node's real option IDs at runtime (see
-// src/luraph.js), so this file stays readable and doesn't hard-code IDs that can
-// differ between nodes. Run `npm run options` to print the live names/choices.
+// dashboard / the `npm run options` output. They are resolved to each node's
+// real option IDs at runtime (see src/luraph.js). Run `npm run options` to see
+// the exact names/choices your account exposes.
+//
+// Note: "Mode = main" from the original spec refers to the Luraph NODE (this
+// tool already selects the recommended node, which is "main"), not a per-file
+// option — so it isn't listed here.
 const profile = {
-  Mode: 'main',
   'Intense VM Structure': false,
-  'GC Fixes': false,
-  Target: 'FiveM',
-  Optimization: 'Level 2',
+  'Enable GC Fixes': false,
+  'Target Version': 'FiveM',
+  'Optimization Level': 'Level 2',
   'Static Environment': true,
   'VM Compression': false,
   'Disable Line Information': false,
-  'Debug Library': false,
+  'Use Debug Library': false,
 };
 
 module.exports = { profile };
