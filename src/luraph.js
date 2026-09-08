@@ -63,4 +63,38 @@ function resolveOptions(node, profile) {
   return { options, warnings };
 }
 
-module.exports = { getClient, getRecommendedNode, resolveOptions };
+// Resolve the profile once, then reuse the node + options for a whole batch.
+async function createSession(profile) {
+  const lph = getClient();
+  const { id, node } = await getRecommendedNode();
+  const { options, warnings } = resolveOptions(node, profile);
+
+  return {
+    nodeId: id,
+    options,
+    warnings,
+    async run(script, fileName) {
+      const { jobId } = await lph.createNewJob(id, script, fileName, options, false, false);
+      const { success, error } = await lph.getJobStatus(jobId);
+      if (!success) throw new Error(error || 'Obfuscation failed.');
+      return lph.downloadResult(jobId); // { fileName, data }
+    },
+  };
+}
+
+// Run an async mapper over items with a bounded number of workers in flight,
+// so a big upload doesn't fire hundreds of jobs at the node at once.
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+module.exports = { getClient, getRecommendedNode, resolveOptions, createSession, mapLimit };
