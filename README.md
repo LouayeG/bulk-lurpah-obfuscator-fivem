@@ -17,11 +17,12 @@ results. Built for FiveM scripts.
 | Disable Line Information | off |
 | Use Debug Library | off |
 
-Obfuscation runs on the **main** node (auto-selected as recommended). Names match
-Luraph's dashboard labels — run `npm run options` to print exactly what your
-account exposes, then edit [`src/settings.js`](src/settings.js). Names are
-resolved to the node's real option IDs at runtime, and anything unrecognized is
-reported in `_report.json` rather than silently applied.
+Obfuscation runs on the **main** node (auto-selected as recommended). The web UI
+loads these options **live from the node** and lets you toggle switches / pick
+dropdowns **per run** — `src/settings.js` just supplies the defaults. Names match
+Luraph's dashboard labels (run `npm run options` to print them); they're resolved
+to the node's real option IDs at runtime, and anything unrecognized is reported
+in `_report.json` rather than silently applied.
 
 ## Resources (.zip)
 
