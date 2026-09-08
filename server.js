@@ -5,7 +5,7 @@ const express = require('express');
 const multer = require('multer');
 const archiver = require('archiver');
 
-const { createSession, mapLimit } = require('./src/luraph');
+const { createSession, mapLimit, getRecommendedNode } = require('./src/luraph');
 const { isZip, processZip } = require('./src/resource');
 const { profile } = require('./src/settings');
 
@@ -25,9 +25,59 @@ const acceptFiles = upload.array('files');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Expose the active profile + limits so the UI can show what will happen.
+// Basic limits + key presence for the UI.
 app.get('/api/settings', (req, res) => {
-  res.json({ profile, maxFiles: MAX_FILES, hasApiKey: Boolean(process.env.LPH_API_KEY) });
+  res.json({ maxFiles: MAX_FILES, hasApiKey: Boolean(process.env.LPH_API_KEY) });
+});
+
+// Default value for an option: the static profile if it names this option,
+// otherwise a sensible fallback (unchecked / first choice).
+function optionDefault(info) {
+  const key = Object.keys(profile).find((k) => k.trim().toLowerCase() === info.name.trim().toLowerCase());
+  if (key !== undefined) {
+    const value = profile[key];
+    if (info.type === 'CHECKBOX') return Boolean(value);
+    if (info.type === 'DROPDOWN') {
+      const choice = (info.choices || []).find((c) => String(c).toLowerCase() === String(value).toLowerCase());
+      return choice || (info.choices || [])[0] || '';
+    }
+    return value;
+  }
+  if (info.type === 'CHECKBOX') return false;
+  if (info.type === 'DROPDOWN') return (info.choices || [])[0] || '';
+  return '';
+}
+
+// The live option schema for the recommended node, so the UI can render real
+// controls pre-filled with the default profile. Falls back to the static
+// profile if the node can't be reached (e.g. no API key).
+app.get('/api/options', async (req, res) => {
+  try {
+    const { id, node } = await getRecommendedNode();
+    const options = Object.entries(node.options).map(([oid, info]) => ({
+      id: oid,
+      name: info.name,
+      type: info.type,
+      choices: info.choices || null,
+      required: Boolean(info.required),
+      tier: info.tier || null,
+      description: info.description || '',
+      value: optionDefault(info),
+    }));
+    res.json({ live: true, node: id, options });
+  } catch (err) {
+    const options = Object.entries(profile).map(([name, value]) => ({
+      id: null,
+      name,
+      type: typeof value === 'boolean' ? 'CHECKBOX' : 'DROPDOWN',
+      choices: typeof value === 'boolean' ? null : [String(value)],
+      required: false,
+      tier: null,
+      description: '',
+      value,
+    }));
+    res.json({ live: false, node: null, options, error: err.message });
+  }
 });
 
 // Accept up to MAX_FILES files, obfuscate each with the fixed profile, zip them.
@@ -48,10 +98,21 @@ app.post('/api/obfuscate', (req, res) => {
       return res.status(400).json({ error: 'No files uploaded.' });
     }
 
+    // Use the settings chosen in the UI if sent, otherwise the default profile.
+    let chosen = profile;
+    if (req.body && typeof req.body.settings === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.settings);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) chosen = parsed;
+      } catch {
+        /* keep defaults */
+      }
+    }
+
     // Resolve the node + options once, then reuse them for the whole batch.
     let session;
     try {
-      session = await createSession(profile);
+      session = await createSession(chosen);
     } catch (err) {
       return res.status(err.statusCode || 502).json({ error: err.message });
     }
@@ -97,7 +158,7 @@ app.post('/api/obfuscate', (req, res) => {
     for (const r of succeeded) archive.append(r.zip || r.data, { name: r.name });
 
     const report = {
-      profile,
+      profile: chosen,
       node: session.nodeId,
       optionWarnings: session.warnings,
       total: results.length,
