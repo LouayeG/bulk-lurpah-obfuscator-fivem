@@ -3,43 +3,85 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Luraph Batch Obfuscator</title>
+    <title>Luraph Obfuscator</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="head">
-        <h1>🔒 Luraph Batch Obfuscator</h1>
-        <p>Drop your Lua files, obfuscate them all with one profile, download a zip.</p>
-      </header>
+    <div class="orbs" aria-hidden="true"><span></span><span></span><span></span></div>
 
-      <section class="card">
-        <div id="drop" class="drop" tabindex="0">
-          <input id="file" type="file" multiple accept=".lua,.luau,.txt,.zip" hidden />
-          <div class="drop-inner">
-            <span class="drop-icon">📄</span>
-            <p><strong>Drag &amp; drop</strong> Lua files or a resource <code>.zip</code></p>
-            <p class="muted">or click to browse — a zip's .lua files are obfuscated in place</p>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3l7 3v5c0 4.5-3 7.9-7 9-4-1.1-7-4.5-7-9V6z" />
+              <rect x="9" y="11" width="6" height="4.5" rx="1" />
+              <path d="M10.3 11V9.7a1.7 1.7 0 0 1 3.4 0V11" />
+            </svg>
+          </span>
+          <div class="brand-text">
+            <span class="brand-name">Luraph <b>Obfuscator</b></span>
+            <span class="brand-sub">FiveM · bulk Lua protection</span>
           </div>
         </div>
+        <div id="conn" class="pill"><span class="dot"></span><span class="pill-label">connecting…</span></div>
+      </header>
 
-        <ul id="list" class="list"></ul>
+      <main class="grid">
+        <section class="panel upload-panel">
+          <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add files">
+            <input id="file" type="file" multiple accept=".lua,.luau,.txt,.zip" hidden />
+            <span class="drop-art">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.5a3.5 3.5 0 0 1 .5 6.96" />
+                <path d="M12 12v7" />
+                <path d="M9 15l3-3 3 3" />
+              </svg>
+            </span>
+            <p class="drop-title">Drop Lua files or a resource <code>.zip</code></p>
+            <p class="drop-sub">or <span class="link">browse</span> — a zip's .lua files are obfuscated in place</p>
+          </div>
 
-        <div class="actions">
-          <button id="go" class="btn btn-primary" disabled>Obfuscate &amp; download</button>
-          <button id="clear" class="btn btn-quiet" disabled>Clear</button>
-        </div>
+          <ul id="list" class="filelist"></ul>
 
-        <div id="status" class="status" hidden></div>
-      </section>
+          <div class="actions">
+            <button id="go" class="btn btn-primary" disabled>
+              <span class="btn-icon" data-icon="shield"></span>
+              <span class="btn-label">Obfuscate &amp; download</span>
+            </button>
+            <button id="clear" class="btn btn-ghost" disabled>
+              <span class="btn-icon" data-icon="trash"></span>
+              Clear
+            </button>
+          </div>
 
-      <aside class="card profile">
-        <h2>Active profile</h2>
-        <p class="muted">Applied to every file. Edit <code>src/settings.js</code> to change.</p>
-        <ul id="profile" class="kv"></ul>
-        <p id="keywarn" class="warn" hidden>⚠️ No API key set — add <code>LPH_API_KEY</code> to <code>.env</code>.</p>
-      </aside>
-    </main>
+          <div id="status" class="status" hidden></div>
+        </section>
+
+        <aside class="panel settings-panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="ph-icon" data-icon="sliders"></span>
+              <span>Obfuscation settings</span>
+            </div>
+            <button id="reset" class="mini-btn" type="button">
+              <span class="mini-icon" data-icon="reset"></span> Reset
+            </button>
+          </div>
+          <p id="node-note" class="panel-note"></p>
+          <div id="options" class="options">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+          </div>
+          <div id="keywarn" class="keywarn" hidden>
+            <span class="kw-icon" data-icon="alert"></span>
+            No API key — add <code>LPH_API_KEY</code> to <code>.env</code> and restart.
+          </div>
+        </aside>
+      </main>
+    </div>
 
     <script src="script.js"></script>
   </body>
