@@ -21,4 +21,46 @@ async function getRecommendedNode() {
   return { id, node: nodes[id] };
 }
 
-module.exports = { getClient, getRecommendedNode };
+// Turn the human-named profile (see settings.js) into the { optionId: value }
+// shape the API wants, by matching each setting's name against the node's
+// options. Dropdown values are matched case-insensitively to a valid choice;
+// checkboxes are coerced to booleans. Anything unmatched is reported, not thrown.
+function resolveOptions(node, profile) {
+  const byName = {};
+  for (const [id, info] of Object.entries(node.options)) {
+    byName[info.name.trim().toLowerCase()] = { id, info };
+  }
+
+  const options = {};
+  const warnings = [];
+
+  for (const [name, value] of Object.entries(profile)) {
+    const match = byName[name.trim().toLowerCase()];
+    if (!match) {
+      warnings.push(`Option "${name}" is not offered by node ${node.name || 'recommended'} — skipped.`);
+      continue;
+    }
+    const { id, info } = match;
+
+    if (info.type === 'DROPDOWN') {
+      const choice = (info.choices || []).find(
+        (c) => String(c).trim().toLowerCase() === String(value).trim().toLowerCase(),
+      );
+      if (!choice) {
+        warnings.push(
+          `"${name}" = "${value}" is not a valid choice (allowed: ${(info.choices || []).join(', ')}) — skipped.`,
+        );
+        continue;
+      }
+      options[id] = choice;
+    } else if (info.type === 'CHECKBOX') {
+      options[id] = Boolean(value);
+    } else {
+      options[id] = value;
+    }
+  }
+
+  return { options, warnings };
+}
+
+module.exports = { getClient, getRecommendedNode, resolveOptions };
