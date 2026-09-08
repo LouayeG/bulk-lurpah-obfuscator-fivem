@@ -6,13 +6,14 @@ const multer = require('multer');
 const archiver = require('archiver');
 
 const { createSession, mapLimit } = require('./src/luraph');
+const { isZip, processZip } = require('./src/resource');
 const { profile } = require('./src/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const MAX_FILES = 100; // files accepted in a single batch
-const MAX_FILE_MB = 5; // per-file size cap
+const MAX_FILE_MB = 50; // per-file size cap (resource .zips can be large)
 const CONCURRENCY = 3; // Luraph jobs kept in flight at once
 
 // Keep uploads in memory — we only forward them to Luraph, never to disk.
@@ -58,6 +59,21 @@ app.post('/api/obfuscate', (req, res) => {
     // Obfuscate every file, CONCURRENCY at a time. One slow/failed file never
     // blocks the others — failures are captured, not thrown.
     const results = await mapLimit(files, CONCURRENCY, async (file) => {
+      // A resource .zip: obfuscate every eligible .lua inside, keep the folder
+      // structure and pass assets/manifests through untouched.
+      if (isZip(file.buffer, file.originalname)) {
+        try {
+          const { buffer, stats } = await processZip(file.buffer, CONCURRENCY, (content, name) =>
+            session.run(content, name),
+          );
+          const name = `${file.originalname.replace(/\.zip$/i, '')}-obfuscated.zip`;
+          return { input: file.originalname, name, zip: buffer, stats, ok: true };
+        } catch (err) {
+          return { input: file.originalname, ok: false, error: err.message };
+        }
+      }
+
+      // A plain Lua file: obfuscate it directly.
       try {
         const out = await session.run(file.buffer.toString('utf8'), file.originalname);
         return { input: file.originalname, name: out.fileName || file.originalname, data: out.data, ok: true };
@@ -78,7 +94,7 @@ app.post('/api/obfuscate', (req, res) => {
     archive.on('error', () => res.destroy());
     archive.pipe(res);
 
-    for (const r of succeeded) archive.append(r.data, { name: r.name });
+    for (const r of succeeded) archive.append(r.zip || r.data, { name: r.name });
 
     const report = {
       profile,
@@ -87,6 +103,7 @@ app.post('/api/obfuscate', (req, res) => {
       total: results.length,
       succeeded: succeeded.length,
       failed: failed.map((r) => ({ file: r.input, error: r.error })),
+      archives: succeeded.filter((r) => r.stats).map((r) => ({ file: r.input, ...r.stats })),
     };
     archive.append(JSON.stringify(report, null, 2), { name: '_report.json' });
 
