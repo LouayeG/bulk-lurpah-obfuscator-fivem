@@ -42,6 +42,39 @@ npm run check     # syntax-check all sources
 npm run dev       # auto-restart on changes
 ```
 
+## How it obfuscates up to 100 files at once
+
+Luraph's API is **one job per file** — it has no "many files" endpoint. This tool
+puts the batch layer on top so you never do it by hand:
+
+1. **One multipart upload.** The browser sends every selected file in a single
+   `POST /api/obfuscate` request (`multer` accepts up to **100 files**, 5 MB each,
+   held in memory — nothing touches disk).
+2. **Resolve the profile once.** `createSession()` calls `getNodes()` a single
+   time to pick the recommended node and map your named settings to that node's
+   option IDs. The same node + options are reused for the whole batch, so the
+   handshake isn't repeated per file.
+3. **Bounded parallel jobs.** A small worker pool (`mapLimit`, **3 in flight**)
+   walks the files: for each it runs `createNewJob → getJobStatus → downloadResult`.
+   Three at a time keeps things fast without hammering the node or tripping rate
+   limits; as one finishes, the next starts.
+4. **Isolated failures.** Each file's result is captured independently, so one
+   bad file (syntax error, unsupported construct) is recorded — not fatal to the
+   rest.
+5. **One zip back.** Successful files are streamed into `obfuscated.zip` as
+   they're ready, alongside a `_report.json` listing the node used, any option
+   warnings, and per-file failures.
+
+Want more throughput? Raise `CONCURRENCY` in `server.js` — but keep it modest;
+each job is real work on Luraph's servers and counts against your plan/tokens.
+
+To change the cap, edit `MAX_FILES` in `server.js`.
+
+## How it works (per file)
+
+`createNewJob(node, script, fileName, options)` → `getJobStatus(jobId)` →
+`downloadResult(jobId)`, using the official [`luraph`](https://www.npmjs.com/package/luraph) package.
+
 ## Notes
 
 - Files are held in memory and forwarded to Luraph only — nothing is written to
